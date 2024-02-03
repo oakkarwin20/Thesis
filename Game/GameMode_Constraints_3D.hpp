@@ -76,7 +76,7 @@ public:
 	float m_debugSine						= 0.0f;
 	float m_debugCos						= 0.0f;
 	float m_debugPerlinNoise				= 0.0f;
-
+	
 	//----------------------------------------------------------------------------------------------------------------------
 	// CCD creature
 	//----------------------------------------------------------------------------------------------------------------------
@@ -84,5 +84,4 @@ public:
 	IK_Chain3D*		m_ikChain_CCD		= nullptr;
 	float			m_limbLength		= 10.0f;
 	float			m_halfLimbLength	= m_limbLength * 0.5f;
-
 };

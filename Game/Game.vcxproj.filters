@@ -46,6 +46,9 @@
     <ClCompile Include="GameMode_Euler3D.cpp">
       <Filter>Gameplay</Filter>
     </ClCompile>
+    <ClCompile Include="FoodManager.cpp">
+      <Filter>Gameplay</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GameCommon.hpp">
@@ -80,6 +83,9 @@
       <Filter>Gameplay</Filter>
     </ClInclude>
     <ClInclude Include="GameMode_Euler3D.hpp">
+      <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="FoodManager.hpp">
       <Filter>Gameplay</Filter>
     </ClInclude>
   </ItemGroup>

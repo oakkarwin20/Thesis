@@ -137,15 +137,15 @@ void GameMode_BipedWalkAnim_3D::Update( float deltaSeconds )
 	//----------------------------------------------------------------------------------------------------------------------
 	// Update Quadruped Hip EndEffector
 	//----------------------------------------------------------------------------------------------------------------------
-	m_quadruped_bindPose->m_hip->m_target.m_currentPos  = m_quadruped_bindPose->m_root->m_jointPos_LS;
-	m_quadruped_bindPose->m_hip->m_target.m_fwdDir		= m_quadruped_bindPose->m_root->m_fwdDir;
-	m_quadruped_bindPose->m_hip->m_target.m_leftDir		= m_quadruped_bindPose->m_root->m_leftDir;
-	m_quadruped_bindPose->m_hip->m_target.m_upDir		= m_quadruped_bindPose->m_root->m_upDir;
+	m_quadruped_bindPose->m_spine->m_target.m_currentPos  = m_quadruped_bindPose->m_root->m_jointPos_LS;
+	m_quadruped_bindPose->m_spine->m_target.m_fwdDir		= m_quadruped_bindPose->m_root->m_fwdDir;
+	m_quadruped_bindPose->m_spine->m_target.m_leftDir		= m_quadruped_bindPose->m_root->m_leftDir;
+	m_quadruped_bindPose->m_spine->m_target.m_upDir		= m_quadruped_bindPose->m_root->m_upDir;
 	// Update limb EE
 	Vec3 leftShoulder	= m_quadruped_bindPose->m_root->m_jointPos_LS + (  m_quadruped_bindPose->m_root->m_leftDir				 * m_quadruped_bindPose->m_offsetRootToHip_Biped );
 	Vec3 rightShoulder	= m_quadruped_bindPose->m_root->m_jointPos_LS + ( -m_quadruped_bindPose->m_root->m_leftDir				 * m_quadruped_bindPose->m_offsetRootToHip_Biped );
-	Vec3 leftHip		= m_quadruped_bindPose->m_hip->m_position_WS  + (  m_quadruped_bindPose->m_hip->m_firstJoint->m_leftDir * m_quadruped_bindPose->m_offsetRootToHip_Biped );
-	Vec3 rightHip		= m_quadruped_bindPose->m_hip->m_position_WS  + ( -m_quadruped_bindPose->m_hip->m_firstJoint->m_leftDir * m_quadruped_bindPose->m_offsetRootToHip_Biped );
+	Vec3 leftHip		= m_quadruped_bindPose->m_spine->m_position_WS  + (  m_quadruped_bindPose->m_spine->m_firstJoint->m_leftDir * m_quadruped_bindPose->m_offsetRootToHip_Biped );
+	Vec3 rightHip		= m_quadruped_bindPose->m_spine->m_position_WS  + ( -m_quadruped_bindPose->m_spine->m_firstJoint->m_leftDir * m_quadruped_bindPose->m_offsetRootToHip_Biped );
 
 	m_quadruped_bindPose->m_leftArm->m_target.m_currentPos		= leftShoulder	- Vec3(0.0f, 0.0f, 20.0f);	
 	m_quadruped_bindPose->m_rightArm->m_target.m_currentPos		= rightShoulder	- Vec3(0.0f, 0.0f, 20.0f);	
@@ -608,7 +608,7 @@ void GameMode_BipedWalkAnim_3D::RenderCreature( std::vector<Vertex_PCU>& verts )
 	if ( g_debugBasis_F3 )
 	{
 		m_quadruped_bindPose->m_root->RenderIJK( verts, 10.0f );
-		m_quadruped_bindPose->m_hip->DebugDrawJoints_IJK( verts );
+		m_quadruped_bindPose->m_spine->DebugDrawJoints_IJK( verts );
 		AddVertsForSphere3D( verts,  m_quadruped_bindPose ->m_leftArm->m_target.m_currentPos, 1.0f, 4.0f, 4.0f, Rgba8::WHITE );
 		AddVertsForSphere3D( verts, m_quadruped_bindPose ->m_rightArm->m_target.m_currentPos, 1.0f, 4.0f, 4.0f, Rgba8::GRAY  );
 		m_quadruped_bindPose->m_leftArm->RenderTarget_IJK( verts, 4.0f );
@@ -627,8 +627,8 @@ void GameMode_BipedWalkAnim_3D::RenderCreature( std::vector<Vertex_PCU>& verts )
 	//	m_quadruped_bindPose ->m_hip->DebugRenderConeConstraints( verts, 2.0f, Rgba8::MAGENTA );
 
 	// Hip to pelvis
-	AddVertsForCylinder3D( verts, m_quadruped_bindPose ->m_hip->m_firstJoint->m_jointPos_LS, m_quadruped_bindPose ->m_leftFoot->m_position_WS,  1.0f, Rgba8::ORANGE );
-	AddVertsForCylinder3D( verts, m_quadruped_bindPose ->m_hip->m_firstJoint->m_jointPos_LS, m_quadruped_bindPose ->m_rightFoot->m_position_WS, 1.0f, Rgba8::SUNSET_ORANGE );
+	AddVertsForCylinder3D( verts, m_quadruped_bindPose ->m_spine->m_firstJoint->m_jointPos_LS, m_quadruped_bindPose ->m_leftFoot->m_position_WS,  1.0f, Rgba8::ORANGE );
+	AddVertsForCylinder3D( verts, m_quadruped_bindPose ->m_spine->m_firstJoint->m_jointPos_LS, m_quadruped_bindPose ->m_rightFoot->m_position_WS, 1.0f, Rgba8::SUNSET_ORANGE );
 
 /*
 	if ( g_debugRenderStepBezier )
@@ -660,9 +660,9 @@ void GameMode_BipedWalkAnim_3D::InitializeCreatures()
 	// Right Foot
 	//----------------------------------------------------------------------------------------------------------------------
 	// 1. Create limbs for leg
-	m_creature->CreateLimbsForIKChain( "rightFoot", 1, m_limbLength,		JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( -180.0f, 180.0f ), FloatRange( -180.0f, 180.0f ), FloatRange( -65.0f, 65.0f ) );		// Thigh
+	m_creature->CreateLimbsForIKChain( "rightFoot", 1, m_limbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( -180.0f, 180.0f ), FloatRange( -180.0f, 180.0f ), FloatRange( -65.0f, 65.0f ) );		// Thigh
 //	m_creature->CreateLimbsForIKChain( "rightFoot", 1, m_limbLength,		JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( -180.0f, 180.0f ), FloatRange( -180.0f, 180.0f ) );		// Thigh
-	m_creature->CreateLimbsForIKChain( "rightFoot", 1, m_limbLength,			 JOINT_CONSTRAINT_TYPE_HINGE_KNEE, FloatRange(    0.0f, 135.0f ), FloatRange(  -15.0f,  35.0f ) );		// Knee
+	m_creature->CreateLimbsForIKChain( "rightFoot", 1, m_limbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_HINGE_KNEE, FloatRange(    0.0f, 135.0f ), FloatRange(  -15.0f,  35.0f ) );		// Knee
 //	m_creature->CreateLimbsForIKChain( "rightFoot", 1, m_halfLimbLength,		 JOINT_CONSTRAINT_TYPE_HINGE_KNEE, FloatRange(   20.0f,  75.0f ), FloatRange(    0.0f,   0.0f ) );		// Ankle
 //	m_creature->CreateLimbsForIKChain( "rightFoot", 1, m_halfLimbLength, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange(   22.0f,  22.0f ), FloatRange(    0.0f,	 0.0f ), FloatRange( 15.0f, 15.0f ) );
 
@@ -676,14 +676,14 @@ void GameMode_BipedWalkAnim_3D::InitializeCreatures()
 	m_quadruped_bindPose->InitLimbs();
 
 	m_quadruped_bindPose->m_root->m_jointPos_LS = Vec3( 0.0f, -50.0f, 20.0f );
-	m_quadruped_bindPose->m_hip->m_firstJoint->m_jointPos_LS = m_quadruped_bindPose->m_root->m_jointPos_LS - Vec3( 20.0f, 0.0f, 0.0f );
-	m_quadruped_bindPose->m_hip->m_finalJoint->m_jointPos_LS = m_quadruped_bindPose->m_root->m_jointPos_LS - Vec3(  4.0f, 0.0f, 0.0f );
-	m_quadruped_bindPose->m_hip->m_finalJoint->m_endPos	 = m_quadruped_bindPose->m_root->m_jointPos_LS;
+	m_quadruped_bindPose->m_spine->m_firstJoint->m_jointPos_LS = m_quadruped_bindPose->m_root->m_jointPos_LS - Vec3( 20.0f, 0.0f, 0.0f );
+	m_quadruped_bindPose->m_spine->m_finalJoint->m_jointPos_LS = m_quadruped_bindPose->m_root->m_jointPos_LS - Vec3(  4.0f, 0.0f, 0.0f );
+	m_quadruped_bindPose->m_spine->m_finalJoint->m_endPos	 = m_quadruped_bindPose->m_root->m_jointPos_LS;
 
-	int size = int( m_quadruped_bindPose->m_hip->m_jointList.size() );
+	int size = int( m_quadruped_bindPose->m_spine->m_jointList.size() );
 	for ( int i = size - 1; i >= 0; i-- )
 	{
-		IK_Joint3D* currentLimb = m_quadruped_bindPose->m_hip->m_jointList[i];
+		IK_Joint3D* currentLimb = m_quadruped_bindPose->m_spine->m_jointList[i];
 		currentLimb->m_endPos	  = m_quadruped_bindPose->m_root->m_jointPos_LS - Vec3( ( ( size - i )  * 4.0f ), 0.0f, 0.0f );
 		currentLimb->m_jointPos_LS	  = currentLimb->m_endPos - Vec3( 4.0f, 0.0f, 0.0f );
 	}

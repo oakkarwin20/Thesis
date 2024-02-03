@@ -343,7 +343,8 @@ void GameMode_Constraints_3D::RenderWorldObjects() const
 	Vec3 jBasis		= Vec3(	  0.0f,   0.0f,  1.0f );
 	g_theApp->m_textFont->AddVertsForText3D( textVerts, textOrigin, iBasis, jBasis, 25.0f, "GameMode Constraints 3D!", Rgba8::GREEN );
 
-	DebugRenderWorld( m_gameMode3DWorldCamera );
+	DebugRenderWorld ( m_gameMode3DWorldCamera );
+	DebugRenderScreen( m_gameMode3DUICamera );
 
 	//----------------------------------------------------------------------------------------------------------------------
 	// Render CCD creature
@@ -512,6 +513,8 @@ void GameMode_Constraints_3D::RenderUIObjects() const
 	g_theApp->m_textFont->AddVertsForTextInBox2D( textVerts, textbox1, cellHeight, 			  cameraPosText, Rgba8::YELLOW, 0.75f,	Vec2( 0.0f, 0.97f ), TextDrawMode::SHRINK_TO_FIT );
 	g_theApp->m_textFont->AddVertsForTextInBox2D( textVerts, textbox1, cellHeight,    cameraOrientationText, Rgba8::YELLOW, 0.75f,  Vec2( 0.0f, 0.94f ), TextDrawMode::SHRINK_TO_FIT );
 
+	float alightmentY = 0.97f;
+	float textheight  = 0.03f;
 	if ( g_debugText_F4 )
 	{
 		// IK chain WS pos
@@ -519,14 +522,14 @@ void GameMode_Constraints_3D::RenderUIObjects() const
 														Stringf( "IK_Chain pos_WS: %0.2f, %0.2f, %0.2f", m_ikChain_CCD->m_position_WS.x, 
 																										 m_ikChain_CCD->m_position_WS.y, 
 																										 m_ikChain_CCD->m_position_WS.z ),
-														Rgba8::GREEN, 0.75f, Vec2( 1.0f, 0.97f ), TextDrawMode::SHRINK_TO_FIT );
+														Rgba8::GREEN, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
 
 		// IK chain WS euler
 		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, 
 														Stringf( "IK_Chain YPR_WS: %0.2f, %0.2f, %0.2f", m_ikChain_CCD->m_eulerAngles_WS.m_yawDegrees, 
 																										 m_ikChain_CCD->m_eulerAngles_WS.m_pitchDegrees, 
 																										 m_ikChain_CCD->m_eulerAngles_WS.m_rollDegrees ),
-														Rgba8::GREEN, 0.75f, Vec2( 1.0f, 0.94f ), TextDrawMode::SHRINK_TO_FIT );
+														Rgba8::GREEN, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
 
 		//----------------------------------------------------------------------------------------------------------------------
 		// Joint 0 (root)
@@ -534,14 +537,14 @@ void GameMode_Constraints_3D::RenderUIObjects() const
 														Stringf( "Joint0_YPR: %0.2f, %0.2f, %0.2f", m_ikChain_CCD->m_firstJoint->m_eulerAngles_LS.m_yawDegrees,
 																									m_ikChain_CCD->m_firstJoint->m_eulerAngles_LS.m_pitchDegrees,
 																									m_ikChain_CCD->m_firstJoint->m_eulerAngles_LS.m_rollDegrees ),	
-														Rgba8::YELLOW, 0.75f, Vec2( 1.0f, 0.91f ), TextDrawMode::SHRINK_TO_FIT );
+														Rgba8::YELLOW, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
 		//----------------------------------------------------------------------------------------------------------------------
 		// Joint 1
 		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, 
 														Stringf( "Joint1_YPR: %0.2f, %0.2f, %0.2f", m_ikChain_CCD->m_jointList[1]->m_eulerAngles_LS.m_yawDegrees,
 																									m_ikChain_CCD->m_jointList[1]->m_eulerAngles_LS.m_pitchDegrees,
 																									m_ikChain_CCD->m_jointList[1]->m_eulerAngles_LS.m_rollDegrees ),	
-														Rgba8::YELLOW, 0.75f, Vec2( 1.0f, 0.88f ), TextDrawMode::SHRINK_TO_FIT );
+														Rgba8::YELLOW, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
 		//----------------------------------------------------------------------------------------------------------------------
 		// Joint 2
 //		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, 
@@ -552,13 +555,22 @@ void GameMode_Constraints_3D::RenderUIObjects() const
 		
 		// DistEeToTarget 
 		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, Stringf( "DistEeToTarget:   %0.2f", m_ikChain_CCD->m_distEeToTarget ),
-														Rgba8::GREEN, 0.75f, Vec2( 1.0f, 0.82f ), TextDrawMode::SHRINK_TO_FIT );
+														Rgba8::GREEN, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
 		
+		// EulerLastFrame
+		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, 
+														Stringf( "Joint1 YPR last Frame: %0.2f, %0.2f, %0.2f", 
+															m_ikChain_CCD->m_jointList[ 1 ]->m_euler_LastFrame.m_yawDegrees,
+															m_ikChain_CCD->m_jointList[ 1 ]->m_euler_LastFrame.m_pitchDegrees,
+															m_ikChain_CCD->m_jointList[ 1 ]->m_euler_LastFrame.m_rollDegrees ),
+														Rgba8::GREEN, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
+
+
 		//----------------------------------------------------------------------------------------------------------------------
 		// Debug noise values (sine, cos, perlin)
-		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, Stringf( "Sine:   %0.2f", m_debugSine			), Rgba8::CYAN, 0.75f, Vec2( 1.0f, 0.79f ), TextDrawMode::SHRINK_TO_FIT );
-		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, Stringf( "Cos:    %0.2f", m_debugCos			), Rgba8::CYAN, 0.75f, Vec2( 1.0f, 0.76f ), TextDrawMode::SHRINK_TO_FIT );
-		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, Stringf( "Perlin: %0.2f", m_debugPerlinNoise	), Rgba8::CYAN, 0.75f, Vec2( 1.0f, 0.73f ), TextDrawMode::SHRINK_TO_FIT );
+		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, Stringf( "Sine:   %0.2f", m_debugSine			), Rgba8::CYAN, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
+		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, Stringf( "Cos:    %0.2f", m_debugCos			), Rgba8::CYAN, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
+		g_theApp->m_textFont->AddVertsForTextInBox2D(	textVerts, textbox1, cellHeight, Stringf( "Perlin: %0.2f", m_debugPerlinNoise	), Rgba8::CYAN, 0.75f, Vec2( 1.0f, alightmentY -= textheight ), TextDrawMode::SHRINK_TO_FIT );
 	}
 
 	
@@ -714,9 +726,14 @@ void GameMode_Constraints_3D::InitializeIK_ChainCCD()
 	m_ikChain_CCD->CreateNewJoint( Vec3( 10.0f, 0.0f, 0.0f ), EulerAngles() );		// Child 1
 	m_ikChain_CCD->CreateNewJoint( Vec3( 10.0f, 0.0f, 0.0f ), EulerAngles() );		// Child 2
 //	m_ikChain_CCD->CreateNewJoint( Vec3( 10.0f, 0.0f, 0.0f ), EulerAngles() );		// Child 3
+// 	m_ikChain_CCD->CreateNewJoint( Vec3( 10.0f, 0.0f, 0.0f ), EulerAngles() );		// Child 3
+// 	m_ikChain_CCD->CreateNewJoint( Vec3( 10.0f, 0.0f, 0.0f ), EulerAngles() );		// Child 3
+// 	m_ikChain_CCD->CreateNewJoint( Vec3( 10.0f, 0.0f, 0.0f ), EulerAngles() );		// Child 3
+// 	m_ikChain_CCD->CreateNewJoint( Vec3( 10.0f, 0.0f, 0.0f ), EulerAngles() );		// Child 3
 	// Actual parameters
 	SetIK_ChainConstraints();
 	m_ikChain_CCD->m_target.m_currentPos = Vec3( 80.0f, 0.0f, 0.0f );
+
 
 	// Test cases for moving the model in WS
 //	m_ikChain_CCD->m_target.m_currentPos = Vec3( 10.0f, 50.0f, -15.0f );

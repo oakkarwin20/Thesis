@@ -29,7 +29,7 @@ public:
 	
 	void MoveIfNeeded(	IK_Chain3D*			const  ikChain, 
 						IK_Chain3D*			const  anchorToggleSkeleton, 
-						IK_Joint3D*		const  refSegment, 
+						IK_Joint3D*			const  refSegment, 
 						Vec3				const& refPosition,		
 						float maxDistFromRef, float maxLength, float fwdStep, float leftStep, 
 						CubicBezierCurve3D& bezierCurve, Stopwatch& bezierTimer );
@@ -52,19 +52,19 @@ public:
 	float						m_offsetRootToHip_Biped		=  5.0f;
 	float						m_defaultHeightZ			= 15.0f;
 	float						m_numArms					= 2.0f;
-	float						m_numHips					= 6.0f;
-	float						m_hipLength					= 5.0f;
+	float						m_numSpineSegments			= 6.0f;
+	float						m_spineLength				= 5.0f;
 	float						m_limbLength				= 10.0f;
 	float						m_halfLimbLength			= m_limbLength * 0.5f;
 
 	// Skeleton System pointers
-	IK_Chain3D* m_hip		 = nullptr;
-	IK_Chain3D* m_leftArm   = nullptr;
-	IK_Chain3D* m_rightArm  = nullptr;
-	IK_Chain3D* m_leftFoot  = nullptr;
-	IK_Chain3D* m_rightFoot = nullptr;
-	IK_Chain3D* m_leftPalm  = nullptr;
-	IK_Chain3D* m_rightPalm = nullptr;
+	IK_Chain3D* m_spine		 = nullptr;
+	IK_Chain3D* m_leftArm    = nullptr;
+	IK_Chain3D* m_rightArm   = nullptr;
+	IK_Chain3D* m_leftFoot   = nullptr;
+	IK_Chain3D* m_rightFoot  = nullptr;
+	IK_Chain3D* m_leftPalm   = nullptr;
+	IK_Chain3D* m_rightPalm  = nullptr;
 	IK_Chain3D* m_neck		 = nullptr;
 	IK_Chain3D* m_head		 = nullptr;
 

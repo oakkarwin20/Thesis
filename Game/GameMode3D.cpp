@@ -89,26 +89,7 @@ void GameMode3D::Update( float deltaSeconds )
 //	UpdateDebugTargetPosInput();
 	
 	// Update Creature
-	UpdateCreatureRootPosInput_Climbing( deltaSeconds );
 	UpdateCreatureRootPosInput_Walking(  deltaSeconds );
-
-
-	//----------------------------------------------------------------------------------------------------------------------
-	// Creature Mount
-	//----------------------------------------------------------------------------------------------------------------------
-	if ( m_shouldMount )
-	{
-		m_root->m_jointPos_LS = Interpolate( m_root->m_jointPos_LS, m_mountGoalPos, deltaSeconds * 8.0f );
-
-		// Check when to stop lerping
-		// If dist is close enough, set m_shouldMount back to false
-		float heightOffset = 8.0f;
-		float distRootToMountGoal = GetDistance3D( m_root->m_jointPos_LS, Vec3( m_mountGoalPos.x, m_mountGoalPos.y, m_mountGoalPos.z + heightOffset ) );
-		if ( CompareIfFloatsAreEqual( distRootToMountGoal, 0.0f, 2.0f ) )
-		{
-			m_shouldMount = false;
-		}
-	}
 
 //	MoveRaycastInput( deltaSeconds );				// Might be useful for debugging later
 	UpdateRaycastResult3D();						// Raycasts
@@ -126,68 +107,9 @@ void GameMode3D::Update( float deltaSeconds )
 		m_goalWalkLerpSpeed = Interpolate( m_goalWalkLerpSpeed, m_walkLerpSpeed, deltaSeconds );
 	}
 
-	//----------------------------------------------------------------------------------------------------------------------
-	// Climbing logic 
-	//----------------------------------------------------------------------------------------------------------------------
-	if ( m_isClimbing ) 
-	{
-		// Execute climbing logic
-			// Place hand on wall
-			// Place another hand on wall
-			// Repeat
-
-		// Initialize common variables
-//		float halfArmLength			= m_maxArmLength  * 0.5f;
-		float quarterArmLength		= m_maxArmLength  * 0.25f;
-//		float tenthArmLength		= m_maxArmLength  * 0.1f;
-		float halfFeetLength		= m_maxFeetLength * 0.5f;
-		float quarterFeetLength		= m_maxFeetLength * 0.25f;
-		Vec3 kBasis					= Vec3( 0.0f, 0.0f, 1.0f );
-		Vec3 jBasis					= m_moveFwdDir.GetRotatedAboutZDegrees( 90.0f );
-
-		//----------------------------------------------------------------------------------------------------------------------
-		// Place hand on wall
-		//----------------------------------------------------------------------------------------------------------------------
-
-		//----------------------------------------------------------------------------------------------------------------------
-		// Right Arm
-		if ( IsLimbIsTooFarFromRoot( m_rightArm, m_rightArm->m_target.m_currentPos ) )
-		{
-			m_rightArm->m_target.m_goalPos = m_updatedImpactPos_FWD + ( kBasis * quarterArmLength ) + ( jBasis * -quarterArmLength );
-		}
-
-		//----------------------------------------------------------------------------------------------------------------------
-		// Left Arm
-		if ( IsLimbIsTooFarFromRoot( m_leftArm, m_leftArm->m_target.m_currentPos ) )
-		{
-			m_leftArm->m_target.m_goalPos = m_updatedImpactPos_FWD + ( kBasis * quarterArmLength ) + ( jBasis * quarterArmLength );
-		}
-
-		//----------------------------------------------------------------------------------------------------------------------
-		// Right Foot
-		if ( IsLimbIsTooFarFromRoot( m_rightFoot, m_rightFoot->m_target.m_currentPos ) )
-		{
-			m_rightFoot->m_target.m_goalPos = m_updatedImpactPos_FWD - ( kBasis * halfFeetLength ) + ( jBasis * -quarterFeetLength );
-		}
-
-		//----------------------------------------------------------------------------------------------------------------------
-		// Left Foot
-		if ( IsLimbIsTooFarFromRoot( m_leftFoot, m_leftFoot->m_target.m_currentPos ) )
-		{
-			m_leftFoot->m_target.m_goalPos = m_updatedImpactPos_FWD - ( kBasis * halfFeetLength ) + ( jBasis * quarterFeetLength );
-		}
-
-		// Height should automatically update through the arm positions
-//		DetermineBestClimbPos();
-
-		//----------------------------------------------------------------------------------------------------------------------
-		// Push body "out of wall"
-	}
-	else
-	{		
-		DetermineBestWalkStepPos();	
-		DetermineBestSprintStepPos();
-	}
+	// Old creature logic
+	DetermineBestWalkStepPos();	
+	DetermineBestSprintStepPos();
 	UpdateCreature( deltaSeconds );
 	ToggleAnchorStates();
 	
@@ -211,7 +133,7 @@ void GameMode3D::Update( float deltaSeconds )
 	UpdateBezier( m_bezierCurve_RightFoot, m_rightFoot, m_timer_RightFoot	);
 	UpdateBezier( m_bezierCurve_LeftFoot,	m_leftFoot, m_timer_LeftFoot	);
 
-	m_map->Update();
+	m_map->Update( deltaSeconds );
 
 	// Update Camera
 	UpdateGameMode3DCamera();
@@ -712,10 +634,10 @@ void GameMode3D::InitializeCreature()
 	m_tail					= new IK_Chain3D(		 "tail", m_root->m_jointPos_LS			);
 	m_head					= new IK_Chain3D(		 "head", m_root->m_jointPos_LS			);
 	m_neck					= new IK_Chain3D(		 "neck", m_root->m_jointPos_LS			);
-	m_rightArm				= new IK_Chain3D(  "rightArm", m_root->m_jointPos_LS			);
+	m_rightArm				= new IK_Chain3D(	 "rightArm", m_root->m_jointPos_LS			);
 	m_leftArm				= new IK_Chain3D(	  "leftArm", m_root->m_jointPos_LS			);
-	m_rightFoot				= new IK_Chain3D( "rightFoot", m_root->m_jointPos_LS			);
-	m_leftFoot				= new IK_Chain3D(  "leftFoot", m_root->m_jointPos_LS			);
+	m_rightFoot				= new IK_Chain3D(	"rightFoot", m_root->m_jointPos_LS			);
+	m_leftFoot				= new IK_Chain3D(	 "leftFoot", m_root->m_jointPos_LS			);
 	m_creatureSkeletalSystemsList.emplace_back( m_hip		);
 	m_creatureSkeletalSystemsList.emplace_back( m_tail		);
 	m_creatureSkeletalSystemsList.emplace_back( m_head		);
@@ -950,8 +872,8 @@ void GameMode3D::RenderCreature( std::vector<Vertex_PCU>& verts_Creature, std::v
 	//----------------------------------------------------------------------------------------------------------------------
 	// Quadruped
 	//----------------------------------------------------------------------------------------------------------------------
-	m_quadruped->m_leftFoot->m_shouldRender  = false;
-	m_quadruped->m_rightFoot->m_shouldRender = false;
+//	m_quadruped->m_leftFoot->m_shouldRender  = false;
+//	m_quadruped->m_rightFoot->m_shouldRender = false;
 	m_quadruped->Render( verts_Creature, Rgba8::WHITE, Rgba8::MAGENTA );
 	// Hiding joint gaps 
 	AddVertsForSphere3D( verts_Creature, m_quadruped->m_leftArm->m_firstJoint->m_jointPos_LS,   1.2f, 4.0f, 4.0f, Rgba8::WHITE );
@@ -969,8 +891,8 @@ void GameMode3D::RenderCreature( std::vector<Vertex_PCU>& verts_Creature, std::v
 	AddVertsForCylinder3D( verts_Creature, m_quadruped->m_root->m_jointPos_LS, m_quadruped->m_rightArm->m_firstJoint->m_jointPos_LS, 1.0f );
 	 
 	// Hip to pelvis
-	AddVertsForCylinder3D( verts_Creature, m_quadruped->m_hip->m_firstJoint->m_jointPos_LS, m_quadruped->m_leftFoot->m_position_WS,  1.0f, Rgba8::ORANGE );
-	AddVertsForCylinder3D( verts_Creature, m_quadruped->m_hip->m_firstJoint->m_jointPos_LS, m_quadruped->m_rightFoot->m_position_WS, 1.0f, Rgba8::SUNSET_ORANGE );
+	AddVertsForCylinder3D( verts_Creature, m_quadruped->m_spine->m_finalJoint->m_endPos, m_quadruped->m_leftFoot->m_position_WS,  1.0f, Rgba8::ORANGE );
+	AddVertsForCylinder3D( verts_Creature, m_quadruped->m_spine->m_finalJoint->m_endPos, m_quadruped->m_rightFoot->m_position_WS, 1.0f, Rgba8::SUNSET_ORANGE );
 	
 	// Neck & Head
 	m_quadruped->m_head->Render( verts_Creature, Rgba8::WHITE, Rgba8::MAGENTA );
@@ -980,7 +902,7 @@ void GameMode3D::RenderCreature( std::vector<Vertex_PCU>& verts_Creature, std::v
 	if ( g_debugBasis_F3 )
 	{
 		m_quadruped->m_root->RenderIJK( verts_NoTexture, 10.0f );
-		m_quadruped->m_hip->DebugDrawJoints_IJK( verts_NoTexture );
+		m_quadruped->m_spine->DebugDrawJoints_IJK( verts_NoTexture );
 		AddVertsForSphere3D( verts_NoTexture,  m_quadruped->m_leftArm->m_target.m_currentPos, 1.0f, 4.0f, 4.0f, Rgba8::WHITE );
 		AddVertsForSphere3D( verts_NoTexture, m_quadruped->m_rightArm->m_target.m_currentPos, 1.0f, 4.0f, 4.0f, Rgba8::GRAY  );
 		m_quadruped->m_leftArm->RenderTarget_IJK( verts_NoTexture, 4.0f );
@@ -1022,8 +944,11 @@ void GameMode3D::RenderCreature( std::vector<Vertex_PCU>& verts_Creature, std::v
 	//----------------------------------------------------------------------------------------------------------------------
 	// Debug render pole vectors
 	//----------------------------------------------------------------------------------------------------------------------
-	AddVertsForSphere3D( verts_NoTexture, m_quadruped->m_rightArm->m_firstJoint->m_poleVector, 1.0f, 8.0f, 16.0f, Rgba8::MAGENTA );
-	AddVertsForSphere3D( verts_NoTexture, m_quadruped->m_leftArm-> m_firstJoint->m_poleVector, 1.0f, 8.0f, 16.0f, Rgba8::CYAN	 );
+	AddVertsForSphere3D( verts_NoTexture, m_quadruped->m_rightArm->m_firstJoint->m_poleVector,	1.0f, 8.0f, 16.0f, Rgba8::MAGENTA	);
+	AddVertsForSphere3D( verts_NoTexture, m_quadruped->m_leftArm-> m_firstJoint->m_poleVector,	1.0f, 8.0f, 16.0f, Rgba8::CYAN		);
+	AddVertsForSphere3D( verts_NoTexture, m_quadruped->m_rightFoot->m_firstJoint->m_poleVector, 1.0f, 8.0f, 16.0f, Rgba8::MAGENTA	);
+	AddVertsForSphere3D( verts_NoTexture, m_quadruped->m_leftFoot->m_firstJoint->m_poleVector,	1.0f, 8.0f, 16.0f, Rgba8::CYAN		);
+
 
 	//----------------------------------------------------------------------------------------------------------------------
 	// Old Quad creature
@@ -1055,7 +980,7 @@ void GameMode3D::RenderCreature( std::vector<Vertex_PCU>& verts_Creature, std::v
 	if ( g_debugAngles_F5 )
 	{
 		// Hip cone constraints
-		m_quadruped->m_hip->DebugDrawConstraints_YPR( verts_BackfaceCull, 2.0f );
+		m_quadruped->m_spine->DebugDrawConstraints_YPR( verts_BackfaceCull, 2.0f );
 
 		float constraintHeight = 2.5f;
 		m_quadruped->m_leftArm-> DebugDrawConstraints_YPR( verts_BackfaceCull, constraintHeight );
@@ -1205,10 +1130,10 @@ void GameMode3D::UpdateCreature( float deltaSeconds )
 	// Keep things attached 
 	//----------------------------------------------------------------------------------------------------------------------
 	// Ensure arm positions stay "attached" to the creature's root pos
-	Vec3 leftArmShoulder	= m_root->m_jointPos_LS + ( m_root->m_leftDir * 10.0f );
-	Vec3 rightArmShoulder	= m_root->m_jointPos_LS - ( m_root->m_leftDir * 10.0f );
-	m_leftArm->m_position_WS   = leftArmShoulder;
-	m_rightArm->m_position_WS  = rightArmShoulder;
+	Vec3 leftArmShoulder		= m_root->m_jointPos_LS + ( m_root->m_leftDir * 10.0f );
+	Vec3 rightArmShoulder		= m_root->m_jointPos_LS - ( m_root->m_leftDir * 10.0f );
+	m_leftArm->m_position_WS	= leftArmShoulder;
+	m_rightArm->m_position_WS	= rightArmShoulder;
 	
 	 m_hip->m_target.m_currentPos = m_root->m_jointPos_LS;
 
@@ -1479,83 +1404,6 @@ void GameMode3D::UpdateCreatureRootPosInput_Walking( float deltaSeconds )
 	m_moveFwdDir = moveIntention.GetNormalized();
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-void GameMode3D::UpdateCreatureRootPosInput_Climbing( float deltaSeconds )
-{
-	if ( g_debugFreeFly_F1 == true )
-	{
-		return;
-	}
-	if ( m_isClimbing == false )
-	{
-		return;
-	}
-
-	Vec3 iBasis, jBasis, kBasis;
-//	m_gameMode3DWorldCamera.m_orientation.GetAsVectors_XFwd_YLeft_ZUp( iBasis, jBasis, kBasis );
-	m_root->m_eulerAngles_LS.GetAsVectors_XFwd_YLeft_ZUp( iBasis, jBasis, kBasis );
-//	iBasis.z = 0.0f;
-//	jBasis.z = 0.0f;
-	iBasis	 = iBasis.GetNormalized(); 
-	jBasis	 = jBasis.GetNormalized(); 
-	kBasis   = kBasis.GetNormalized();
-
-	Vec3 moveIntention = m_moveFwdDir;
-	//----------------------------------------------------------------------------------------------------------------------
-	// All directions are local
-	//----------------------------------------------------------------------------------------------------------------------
-	if ( g_theInput->IsKeyDown( KEYCODE_SHIFT ) )
-	{
-		m_currentSpeed					= m_fasterSpeed;
-		m_goalWalkLerpSpeed	= m_sprintLerpSpeed;
-	}
-	if ( g_theInput->WasKeyJustReleased( KEYCODE_SHIFT ) )
-	{
-		m_currentSpeed					= m_defaultSpeed;
-		m_goalWalkLerpSpeed	= m_walkLerpSpeed;
-	}
-
-	// Forward
-	if ( g_theInput->IsKeyDown( 'W' ) )
-	{
-		m_root->m_jointPos_LS += ( kBasis * m_currentSpeed ) * deltaSeconds;
-		moveIntention	   += ( kBasis * m_currentSpeed ) * deltaSeconds;
-	}
-	// Left
-	if ( g_theInput->IsKeyDown( 'A' ) )
-	{
-		m_root->m_jointPos_LS += ( Vec3( jBasis.x, jBasis.y, 0.0f ) * m_currentSpeed ) * deltaSeconds;
-		moveIntention	   += ( Vec3( jBasis.x, jBasis.y, 0.0f ) * m_currentSpeed ) * deltaSeconds;
-	}
-	// Backwards
-	if ( g_theInput->IsKeyDown( 'S' ) )
-	{
-		m_root->m_jointPos_LS -= ( kBasis * m_currentSpeed ) * deltaSeconds;
-		moveIntention	   -= ( kBasis * m_currentSpeed ) * deltaSeconds;
-	}
-	// Right
-	if ( g_theInput->IsKeyDown( 'D' ) )
-	{
-		m_root->m_jointPos_LS -= ( Vec3( jBasis.x, jBasis.y, 0.0f ) * m_currentSpeed ) * deltaSeconds;
-		moveIntention	   -= ( Vec3( jBasis.x, jBasis.y, 0.0f ) * m_currentSpeed ) * deltaSeconds;
-	}
-
-	//----------------------------------------------------------------------------------------------------------------------
-	// Climbing 
-	//----------------------------------------------------------------------------------------------------------------------
-	if ( g_theInput->WasKeyJustPressed( 'E' ) )
-	{
-		if ( m_isClimbing )
-		{
-			m_isClimbing = false;
-		}
-	}
-
-	//----------------------------------------------------------------------------------------------------------------------
-	// Set movementFwdDir
-	//----------------------------------------------------------------------------------------------------------------------
-	m_moveFwdDir = moveIntention.GetNormalized();
-}
 
 //-------------------------------------------  ---------------------------------------------------------------------------
 void GameMode3D::UpdateCreatureHeight( float deltaSeconds )
@@ -2010,57 +1858,6 @@ void GameMode3D::DetermineBestWalkStepPos()
 	}
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-void GameMode3D::DetermineBestClimbPos()
-{
-	// The positions only needs to be updated for one frame (not every frame) if the distance from currentLimb pos to root is too far away
-	// The Z height of the rayImpactPos always needs to be updated
-	float halfArmLength		= m_maxArmLength * 0.5f;
-	float quarterArmLength	= m_maxArmLength * 0.3f;
-//	float halfFeetLength	= m_maxFeetLength * 0.5f;
-//	float quarterFeetLength	= m_maxFeetLength * 0.25f;
-
-	//----------------------------------------------------------------------------------------------------------------------
-	// Right Arm
-	if ( IsLimbIsTooFarFromRoot( m_rightArm, m_rightArm->m_target.m_currentPos) )
-	{
-		// Cannot move, is locked.					// Stay in the same place
-		if ( m_rightArm->m_anchorState == ANCHOR_STATE_LOCKED )
-		{
-			// Clamp my body to stay in the same place until the other limb is finished moving and this limb unlocks
-			// Then set a new foot placement and move
-
-			// Check if other limb can be anchored and my limb can be unlocked
-			if ( m_leftArm->m_anchorState == ANCHOR_STATE_FREE || m_leftArm->m_anchorState == ANCHOR_STATE_LOCKED )
-			{
-				m_rightArm->m_anchorState = ANCHOR_STATE_FREE;
-				m_leftArm->m_anchorState  = ANCHOR_STATE_LOCKED;
-			}
-			else
-			{
-				if ( m_raycast_rightArmDown.m_didRayImpact )
-				{
-					m_rightArm->m_target.m_goalPos = m_raycast_rightArmDown.m_updatedImpactPos;
-				}
-			}
-		}
-		// Is moving, cannot lock.					// In the process of moving, don't do anything
-		if ( m_rightArm->m_anchorState == ANCHOR_STATE_MOVING )
-		{
-		}
-		// Is not moving, can lock, can also move,	// Limb can be locked or moved
-		if ( m_rightArm->m_anchorState == ANCHOR_STATE_FREE )
-		{
-			if ( m_raycast_rightArmDown.m_didRayImpact )
-			{
-				m_rightArm->m_target.m_goalPos = m_raycast_rightArmDown.m_updatedImpactPos;
-			}
-			SpecifyTargetPosForClimbing( m_rightArm->m_target.m_goalPos, halfArmLength, -quarterArmLength );
-			m_rightArm->m_anchorState = ANCHOR_STATE_MOVING;
-			m_leftArm->m_anchorState  = ANCHOR_STATE_LOCKED;
-		}
-	}
-}
 
 //----------------------------------------------------------------------------------------------------------------------
 bool GameMode3D::IsLimbIsTooFarFromRoot( IK_Chain3D* currentLimb, Vec3 footTargetPos )
@@ -2087,92 +1884,6 @@ bool GameMode3D::IsLimbIsTooFarFromHip( IK_Chain3D* currentLimb, Vec3 footTarget
 		return true;
 	}
 	return false;
-}
-
-
-//----------------------------------------------------------------------------------------------------------------------
-void GameMode3D::SpecifyTargetPosForClimbing( Vec3& targetPos, float fwdStepAmount, float leftStepAmount )
-{
-	Vec3 prevTargetPos		= targetPos;
-
-	// Determine the ideal next step position
-	float maxLength			= ( m_numArms * m_limbLength ) * 0.95f;
-	Vec3 moveLeftDir		= m_moveFwdDir.GetRotatedAboutZDegrees( 90.0f );
-	Vec3 kBasis				= Vec3( 0.0f, 0.0f, 1.0f );
-	Vec3 idealNewPos		= m_root->m_jointPos_LS + ( kBasis * fwdStepAmount ) + ( moveLeftDir * leftStepAmount );
-
-//	wallPosition + zOffset + leftStepOffset;
-
-	// Use raycast to ensure the ideal next step is "placed" on a walkable block
-	RaycastResult3D raycastResult3D;
-//	Vec3 rayStartPos		= idealNewPos + ( m_moveFwdDir *  );
-	Vec3 rayStartPos		= idealNewPos;
-	Vec3 impactPos			= Vec3::ZERO;
-	Vec3 impactNormal		= Vec3::ZERO;
-	bool didRayImpactBlock	= false;
-	didRayImpactBlock		= DidRaycastHitWalkableBlock( raycastResult3D, rayStartPos, Vec3::NEGATIVE_Z, m_raylength_Long, impactPos, impactNormal );
-
-	float distRootToPreviousAlternativePos = 500.0f;
-	// Ensure ideal next step is close enough AND on a walkable block
-	float distRootToNewPos = GetDistance3D( idealNewPos, m_root->m_jointPos_LS );
-	if ( CompareIfFloatsAreEqual( distRootToNewPos, maxLength, 2.0f ) && didRayImpactBlock )
-	{		
-		// Set to optimal "next step" foot placement position since targetPos is valid
-		targetPos = idealNewPos;
-	}
-	else
-	{
-		// Since normal "next step" position is invalid, find better footPlacement position
-
-		/*
-		//  Get nearest valid footstep algorithm
-		1. Check if this block is walkable
-		2. Check if alternative next step is close enough
-		2a. True: Step
-		2b. False: Keep searching
-		2b1. Stay in the same position if next position was not found
-		*/
-
-		Vec3 nearestPoint3D = Vec3( 0.0f, 0.0f, -1000.0f );
-		for ( int i = 0; i < m_blockList.size(); i++ )
-		{
-			// Ensure currentBlock is "Walkable"
-			Block* currentBlock = m_blockList[i];
-			if ( !currentBlock->m_isWalkable )
-			{
-				continue;
-			}
-
-			// Get nearestPoint
-			Vec3 alternativeNewPos	= currentBlock->m_aabb3.GetNearestPoint( idealNewPos );
-			alternativeNewPos.z		= currentBlock->m_aabb3.m_maxs.z;
-
-			// Determine the closest position as valid 
-			float distRootToNewAlternativePos = GetDistance3D( alternativeNewPos, m_root->m_jointPos_LS );
-			if ( distRootToNewAlternativePos <= maxLength )
-			{
-				nearestPoint3D						= alternativeNewPos;
-				distRootToPreviousAlternativePos	= distRootToNewAlternativePos;
-			}
-			else
-			{
-				// Keep track of the closest position to creature
-				if ( distRootToNewAlternativePos <= distRootToPreviousAlternativePos )
-				{
-					nearestPoint3D						= alternativeNewPos;
-					distRootToPreviousAlternativePos	= distRootToNewAlternativePos;
-				}
-			}
-		}
-
-		if ( nearestPoint3D == Vec3( 0.0f, 0.0f, -1000.0f ) )
-		{
-			nearestPoint3D = prevTargetPos;
-		}
-
-		// Set targetPos to nearestPoint
-		targetPos = nearestPoint3D;
-	}
 }
 
 
@@ -2518,9 +2229,9 @@ void GameMode3D::TurnCreatureTowardsCameraDir()
 	{
 		currentRootYaw = m_quadruped->m_root->m_eulerAngles_LS.m_yawDegrees;
 	}
-	float currentHipYaw									= m_hip->m_firstJoint->m_eulerAngles_LS.m_yawDegrees;
-	float newRootYawAngle								= GetTurnedTowardDegrees( currentRootYaw, goalDegrees, 8.0f );
-	float newHipYawAngle								= GetTurnedTowardDegrees(  currentHipYaw, goalDegrees, 8.0f );
+	float currentHipYaw		= m_hip->m_firstJoint->m_eulerAngles_LS.m_yawDegrees;
+	float newRootYawAngle	= GetTurnedTowardDegrees( currentRootYaw, goalDegrees, 0.5f );
+	float newHipYawAngle	= GetTurnedTowardDegrees(  currentHipYaw, goalDegrees, 0.5f );
 	if ( g_debugToggleLegs_2 )
 	{
 		m_root->m_eulerAngles_LS.m_yawDegrees = newRootYawAngle;				// #QuadupedHack
@@ -2529,10 +2240,10 @@ void GameMode3D::TurnCreatureTowardsCameraDir()
 	{
 		m_quadruped->m_root->m_eulerAngles_LS.m_yawDegrees = newRootYawAngle; 
 	}
-	m_hip->m_firstJoint->m_eulerAngles_LS.m_yawDegrees		= newHipYawAngle;
+	m_hip->m_firstJoint->m_eulerAngles_LS.m_yawDegrees = newHipYawAngle;
 	if ( !m_headHasLookAtTarget )
 	{
-		m_head->m_firstJoint->m_eulerAngles_LS.m_yawDegrees		= newRootYawAngle;
+		m_head->m_firstJoint->m_eulerAngles_LS.m_yawDegrees = newRootYawAngle;
 	}
 
 	if ( g_debugToggleLegs_2 )
@@ -2643,10 +2354,10 @@ void GameMode3D::InitializeTrees()
 	//----------------------------------------------------------------------------------------------------------------------
 	m_treeCreature = new CreatureBase( Vec3( 250.0f, 100.0f, 70.0f ) );
 	m_treeCreature->CreateChildSkeletalSystem( "treeCreature1", m_treeCreature->m_root->m_jointPos_LS, nullptr, m_treeCreature );
-	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 1.0f, 10.0f, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f, 180.0f ) );
-	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 2.0f, 10.0f, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f,  75.0f ) );
-	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 3.0f, 10.0f, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f,  45.0f ) );
-	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 4.0f, 10.0f, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f,  25.0f ) );
+	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 1.0f, 10.0f, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f, 180.0f ) );
+	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 2.0f, 10.0f, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f,  75.0f ) );
+	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 3.0f, 10.0f, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f,  45.0f ) );
+	m_treeCreature->CreateLimbsForIKChain( "treeCreature1", 4.0f, 10.0f, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_BALL_AND_SOCKET, FloatRange( 0.0f,  25.0f ) );
 	m_treeCreature->m_root->m_refVector		= Vec3( 0.0f, 0.0f, 1.0f );
 	IK_Chain3D* treeCreature1			= m_treeCreature->GetSkeletonByName( "treeCreature1" );
 	treeCreature1->m_firstJoint->m_refVector = m_treeCreature->m_root->m_refVector;

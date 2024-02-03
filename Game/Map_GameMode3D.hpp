@@ -9,6 +9,7 @@
 class GameMode3D;
 class VertexBuffer;
 class IndexBuffer;
+class FoodManager;
 
 /*
 //----------------------------------------------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ public:
 	Map_GameMode3D( GameMode3D* game );
 	~Map_GameMode3D();
 
-	void Update();
+	void Update( float deltaSeconds );
 	void Render() const;
 
 public:
@@ -47,6 +48,7 @@ public:
 	IndexBuffer*				m_ibo			= nullptr;
 	std::vector<Vertex_PCU>		m_planeVerts;
 	std::vector<unsigned int>	m_indexList;
-	float m_minFloorHeight = -2.0f;
-	float m_maxFloorHeight =  2.0f;
+	float						m_minFloorHeight = -2.0f;
+	float						m_maxFloorHeight =  2.0f;
+	FoodManager*				m_foodManager	 = nullptr;
 };

@@ -2,6 +2,7 @@
 #include "Game/GameMode3D.hpp"
 #include "Game/App.hpp"
 #include "Game/GameCommon.hpp"
+#include "Game/FoodManager.hpp"
 
 #include "Engine/Math/RandomNumberGenerator.hpp"
 
@@ -11,6 +12,9 @@ Map_GameMode3D::Map_GameMode3D( GameMode3D* game )
 {
 	m_game = game;
 
+	//----------------------------------------------------------------------------------------------------------------------
+	// Initialize randomized Z plane
+	//----------------------------------------------------------------------------------------------------------------------
 	// Randomize floor height
 	float height = 22.0f;
 	AddVertsForPlane( m_planeVerts, m_indexList, Vec3( 15.0f, 15.0f, 0.0f ), 10, 20, 20 );
@@ -25,6 +29,11 @@ Map_GameMode3D::Map_GameMode3D( GameMode3D* game )
 	m_ibo = g_theRenderer->CreateIndexBuffer (  m_indexList.size() );
 	g_theRenderer->Copy_CPU_To_GPU( m_planeVerts.data(), sizeof( Vertex_PCU )   * m_planeVerts.size(), m_vbo, sizeof( Vertex_PCU ) );
 	g_theRenderer->Copy_CPU_To_GPU(  m_indexList.data(), sizeof( unsigned int ) *  m_indexList.size(), m_ibo );
+
+	//----------------------------------------------------------------------------------------------------------------------
+	// Initialize food orbs
+	//----------------------------------------------------------------------------------------------------------------------
+	m_foodManager = new FoodManager( 1, m_game );
 }
 
 
@@ -36,11 +45,13 @@ Map_GameMode3D::~Map_GameMode3D()
 	m_vbo = nullptr;
 	delete m_ibo;
 	m_ibo = nullptr;
+	delete m_foodManager;
+	m_foodManager = nullptr;
 }
 
 
 //----------------------------------------------------------------------------------------------------------------------
-void Map_GameMode3D::Update()
+void Map_GameMode3D::Update( float deltaSeconds )
 {
 	if ( g_theInput->WasKeyJustPressed( '8' ) )
 	{
@@ -90,6 +101,11 @@ void Map_GameMode3D::Update()
 			}
 		}
 	}
+
+	//----------------------------------------------------------------------------------------------------------------------
+	// Lerp foodBalls to goal positions
+	//----------------------------------------------------------------------------------------------------------------------
+	m_foodManager->Update( deltaSeconds );
 }
 
 
@@ -109,6 +125,11 @@ void Map_GameMode3D::Render() const
 	}
 
 	AddVertsForSphere3D( skyVerts, Vec3::ZERO, 800.0f, 32.0f, 32.0f );
+
+	//----------------------------------------------------------------------------------------------------------------------
+	// Render food orbs
+	//----------------------------------------------------------------------------------------------------------------------
+	m_foodManager->Render( verts );
 
 	// Render plane
 	g_theRenderer->SetBlendMode( BlendMode::ALPHA );

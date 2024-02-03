@@ -81,15 +81,12 @@ public:
 	void RenderCreature( std::vector<Vertex_PCU>& verts_Creature, std::vector<Vertex_PCU>& verts_NoTexture,std::vector<Vertex_PCU>& verts_BackfaceCull, std::vector<Vertex_PCU>& verts_Text ) const;
 	void UpdateCreature( float deltaSeconds );
 	void UpdateCreatureRootPosInput_Walking( float deltaSeconds );
-	void UpdateCreatureRootPosInput_Climbing( float deltaSeconds );
 	void UpdateCreatureHeight( float deltaSeconds );
 	void DetermineBestSprintStepPos();
 	void DetermineBestWalkStepPos();
-	void DetermineBestClimbPos();
 	bool IsLimbIsTooFarFromRoot( IK_Chain3D* currentLimb, Vec3 footTargetPos );
 	bool IsLimbIsTooFarFromHip(  IK_Chain3D* currentLimb, Vec3 footTargetPos );
 	bool DoesTargetPosOverlapWalkableObject( Vec3& footTargetPos );
-	void SpecifyTargetPosForClimbing( Vec3& targetPos, float fwdStepAmount, float leftStepAmount );
 	void SpecifyFootPlacementPos( Vec3& targetPos, float fwdStepAmount, float leftStepAmount );
 	void SpecifyFootPlacementPos( Vec3& targetPos, IK_Joint3D* refLimb, float fwdStepAmount, float leftStepAmount );
 	//----------------------------------------------------------------------------------------------------------------------

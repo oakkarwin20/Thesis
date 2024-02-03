@@ -702,7 +702,7 @@ void GameMode_Euler3D::InitializeCreatures()
 	//----------------------------------------------------------------------------------------------------------------------
 	// 1. Create limbs for leg
  	// Testing (no constraints)
-	m_creature->CreateLimbsForIKChain( "leftFoot", 6, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER );		
+	m_creature->CreateLimbsForIKChain( "leftFoot", 6, m_limbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER );		
  	// Actual parameters
 	SetLeftFootConstraints();
 

@@ -36,36 +36,32 @@ void Quadruped::InitLimbs()
 	//----------------------------------------------------------------------------------------------------------------------
 	// Left arms and shoulders
 	Vec3 leftShoulder	= m_root->m_jointPos_LS + ( m_root->m_leftDir * m_offsetRootToHip_Biped );
-	CreateChildSkeletalSystem	(  "leftArm", leftShoulder, nullptr, this  );
-	CreateLimbsForIKChain( "leftArm", 2, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER );									// Thigh
-//	CreateLimbsForIKChain( "leftArm", 1, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER, FloatRange( -75.0f, 75.0f ) );									// Thigh
-//	CreateLimbsForIKChain( "leftArm", 1, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER, FloatRange( -0.0f, 0.0f ), FloatRange( -150.0f, 0.0f ) );		// Knee
+	CreateChildSkeletalSystem(  "leftArm", leftShoulder, nullptr, this  );
+	CreateLimbsForIKChain	 ( "leftArm", 2, m_limbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER );									// Thigh
 	// Right arms and shoulders
 	Vec3 rightShoulder	= m_root->m_jointPos_LS + ( -m_root->m_leftDir * m_offsetRootToHip_Biped );
-	CreateChildSkeletalSystem	( "rightArm", rightShoulder, nullptr, this );
-	CreateLimbsForIKChain( "rightArm", 2, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER );									// Thigh
-//	CreateLimbsForIKChain( "rightArm", 1, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER, FloatRange( -75.0f, 75.0f ) );									// Thigh
-//	CreateLimbsForIKChain( "rightArm", 1, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER, FloatRange( -0.0f, 0.0f ), FloatRange( -150.0f, 0.0f ) );		// Knee
+	CreateChildSkeletalSystem( "rightArm", rightShoulder, nullptr, this );
+	CreateLimbsForIKChain	 ( "rightArm", 2, m_limbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER );									// Thigh
 	// Hip (Spine)
-	Vec3 hipStart		= m_root->m_jointPos_LS + ( -m_root->m_fwdDir * (m_numHips * m_hipLength ) );
-	CreateChildSkeletalSystem	(  "hip", hipStart, nullptr, this, false );
-	CreateLimbsForIKChain(  "hip", m_numHips, m_hipLength, JOINT_CONSTRAINT_TYPE_EULER, FloatRange( -25.0f, 25.0f ), FloatRange( -25.0f, 25.0f ) );
-	m_hip				= GetSkeletonByName( "hip" );
+	Vec3 spineStart		= m_root->m_jointPos_LS;
+	CreateChildSkeletalSystem(  "spine", spineStart, nullptr, this );
+	CreateLimbsForIKChain	 (  "spine", m_numSpineSegments, m_spineLength, -Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER, FloatRange( -165.0f, 165.0f ), FloatRange( -165.0f, 165.0f ) );
+	m_spine				= GetSkeletonByName( "spine" );
 	// Legs
-	Vec3 leftHip		= m_hip->m_position_WS + (  m_hip->m_firstJoint->m_leftDir * m_offsetRootToHip_Biped );
-	Vec3 rightHip		= m_hip->m_position_WS + ( -m_hip->m_firstJoint->m_leftDir * m_offsetRootToHip_Biped );
-	CreateChildSkeletalSystem	(  "leftFoot",  leftHip, m_hip->m_firstJoint, this );
-	CreateChildSkeletalSystem	( "rightFoot", rightHip, m_hip->m_firstJoint, this );
-	CreateLimbsForIKChain(  "leftFoot", m_numArms, 2.0f );
-	CreateLimbsForIKChain( "rightFoot", m_numArms, 2.0f );
+	Vec3 leftHip		= m_spine->m_finalJoint->m_endPos - ( m_spine->m_finalJoint->m_leftDir * m_offsetRootToHip_Biped ) + Vec3( 10.0f, 0.0f, 0.0f );
+	Vec3 rightHip		= m_spine->m_finalJoint->m_endPos + ( m_spine->m_finalJoint->m_leftDir * m_offsetRootToHip_Biped ) + Vec3( 10.0f, 0.0f, 0.0f );
+	CreateChildSkeletalSystem(  "leftFoot",  leftHip, m_spine->m_finalJoint, this );
+	CreateChildSkeletalSystem( "rightFoot", rightHip, m_spine->m_finalJoint, this );
+	CreateLimbsForIKChain	 (  "leftFoot", m_numArms, m_limbLength );
+	CreateLimbsForIKChain	 ( "rightFoot", m_numArms, m_limbLength );
 	// Neck
-	CreateChildSkeletalSystem	( "neck", Vec3::ZERO, nullptr, this );
-	CreateLimbsForIKChain( "neck", 1, m_limbLength, JOINT_CONSTRAINT_TYPE_EULER );
-	m_neck = GetSkeletonByName	( "neck" );
+	CreateChildSkeletalSystem ( "neck", Vec3::ZERO, nullptr, this );
+	CreateLimbsForIKChain	  ( "neck", 1, m_limbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER );
+	m_neck = GetSkeletonByName( "neck" );
 	// Head
-	CreateChildSkeletalSystem	( "head", Vec3::ZERO, nullptr, this );
-	CreateLimbsForIKChain( "head", 1, m_halfLimbLength, JOINT_CONSTRAINT_TYPE_EULER );
-	m_head = GetSkeletonByName	( "head" );
+	CreateChildSkeletalSystem ( "head", Vec3::ZERO, nullptr, this );
+	CreateLimbsForIKChain	  ( "head", 1, m_halfLimbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER );
+	m_head = GetSkeletonByName( "head" );
 
 	//----------------------------------------------------------------------------------------------------------------------
 	// 2. Get pointers to limbs
@@ -79,12 +75,12 @@ void Quadruped::InitLimbs()
 	// Create Palms
 	//----------------------------------------------------------------------------------------------------------------------
 	// Left  Palm
-	CreateChildSkeletalSystem	( "leftPalm", Vec3::ZERO, nullptr, this );
-	CreateLimbsForIKChain( "leftPalm", 1, m_halfLimbLength, JOINT_CONSTRAINT_TYPE_EULER );
+	CreateChildSkeletalSystem	  ( "leftPalm", Vec3::ZERO, nullptr, this );
+	CreateLimbsForIKChain		  ( "leftPalm", 1, m_halfLimbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER );
 	m_leftPalm = GetSkeletonByName( "leftPalm" );
 	// Right Palm
-	CreateChildSkeletalSystem	( "rightPalm", Vec3::ZERO, nullptr, this );
-	CreateLimbsForIKChain( "rightPalm", 1, m_halfLimbLength, JOINT_CONSTRAINT_TYPE_EULER );
+	CreateChildSkeletalSystem	   ( "rightPalm", Vec3::ZERO, nullptr, this );
+	CreateLimbsForIKChain		   ( "rightPalm", 1, m_halfLimbLength, Vec3::X_FWD, JOINT_CONSTRAINT_TYPE_EULER );
 	m_rightPalm = GetSkeletonByName( "rightPalm" );
 }
 
@@ -95,39 +91,35 @@ void Quadruped::UpdateLimbs( float deltaSeconds )
 	//----------------------------------------------------------------------------------------------------------------------
 	// Update Quadruped Hip EndEffector
 	//----------------------------------------------------------------------------------------------------------------------
-	m_hip->m_target.m_currentPos	= m_root->m_jointPos_LS;
-	m_hip->m_target.m_fwdDir		= m_root->m_fwdDir;
-	m_hip->m_target.m_leftDir		= m_root->m_leftDir;
-	m_hip->m_target.m_upDir			= m_root->m_upDir;
-//	std::string hip = Stringf( "hipEndPos X:%0.2f, Y:%0.2f, Z:%0.2f", m_hip->m_finalJoint->m_endPos.x, m_hip->m_finalJoint->m_endPos.y, m_hip->m_finalJoint->m_endPos.z );
-//	DebugAddScreenText( hip, Vec2( 20.0f, 40.0f ), 2.0f, Vec2( 0.5f, 0.5f ), 0.0f, Rgba8::MAGENTA, Rgba8::MAGENTA );
+	m_spine->m_position_WS			= m_root->m_jointPos_LS;
+	m_spine->m_target.m_currentPos	= m_root->m_jointPos_LS - ( m_root->m_fwdDir * (m_spineLength * (m_numSpineSegments + 1) ) );
+//	m_spine->m_target.m_fwdDir		= m_root->m_fwdDir;
+//	m_spine->m_target.m_leftDir		= m_root->m_leftDir;
+//	m_spine->m_target.m_upDir		= m_root->m_upDir;
 
 	//----------------------------------------------------------------------------------------------------------------------
-	// Update pole vectors
-	Vec3 upNess								= -( m_root->m_upDir  * 10.0f );
-	Vec3 fwdNess							= -( m_root->m_fwdDir *  5.0f );
-	upNess									= -( m_rightArm->m_firstJoint->m_upDir  * 10.0f );
-	fwdNess									=  ( m_rightArm->m_firstJoint->m_fwdDir *  5.0f );
+	// Update pole vectors (left & right arms)
+	Vec3 upNess								= -( m_rightArm->m_firstJoint->m_upDir  * 10.0f );
+	Vec3 fwdNess							=  ( m_rightArm->m_firstJoint->m_fwdDir *  5.0f );
 	m_rightArm->m_firstJoint->m_poleVector	= m_rightArm->m_firstJoint->m_jointPos_LS + fwdNess + upNess;
-
-	upNess									= -( m_root->m_upDir  * 10.0f );
-	fwdNess									= -( m_root->m_fwdDir *  5.0f );
-	upNess									= -( m_rightArm->m_firstJoint->m_upDir  * 10.0f );
-	fwdNess									=  ( m_rightArm->m_firstJoint->m_fwdDir *  5.0f );
-	m_leftArm->m_firstJoint->m_poleVector	= m_leftArm->m_firstJoint->m_jointPos_LS + fwdNess + upNess;
+	m_leftArm->m_firstJoint->m_poleVector	=  m_leftArm->m_firstJoint->m_jointPos_LS + fwdNess + upNess;
+	// Update pole vectors (left & right feet)
+	upNess									= ( m_rightFoot->m_firstJoint->m_upDir  * 10.0f );
+	fwdNess									= ( m_rightFoot->m_firstJoint->m_fwdDir *  5.0f );
+	m_rightFoot->m_firstJoint->m_poleVector	= m_rightFoot->m_firstJoint->m_jointPos_LS + fwdNess + upNess;
+	m_leftFoot->m_firstJoint->m_poleVector	=  m_leftFoot->m_firstJoint->m_jointPos_LS + fwdNess + upNess;
 	//----------------------------------------------------------------------------------------------------------------------
 
 	// Init common step variables
 	float skeletonMaxLength			 = m_leftArm->GetMaxLengthOfSkeleton() + 2.0f;
-//	skeletonMaxLength				-= ( m_leftArm->m_finalJoint->m_distToChild * 1.1f );
 	float maxDistStartPosToNewPos	 = m_limbLength * 0.5f;
 	float fwdStep					 = m_limbLength * 0.9f; 
 	float leftStep					 = m_offsetRootToHip_Biped; 
 
 	float leftArmDistRoot   = GetDistance3D(   m_leftArm->m_finalJoint->m_endPos, m_root->m_jointPos_LS );
 	float rightArmDistRoot  = GetDistance3D(   m_leftArm->m_finalJoint->m_endPos, m_root->m_jointPos_LS );
-	float leftFootDistRoot  = GetDistance3D(  m_leftFoot->m_finalJoint->m_endPos, m_hip->m_position_WS );
-	float rightFootDistRoot = GetDistance3D( m_rightFoot->m_finalJoint->m_endPos, m_hip->m_position_WS );
+	float leftFootDistRoot  = GetDistance3D(  m_leftFoot->m_finalJoint->m_endPos, m_spine->m_position_WS );
+	float rightFootDistRoot = GetDistance3D( m_rightFoot->m_finalJoint->m_endPos, m_spine->m_position_WS );
 	DebuggerPrintf( Stringf( "LA: %0.2f, RA: %0.2f,\nLF: %0.2f, RF: %0.2f, MaxLimbLength: %0.2f\n", leftArmDistRoot, rightArmDistRoot,  leftFootDistRoot, rightFootDistRoot, skeletonMaxLength ).c_str() );
 	//----------------------------------------------------------------------------------------------------------------------			
 	// Arms + Feet
@@ -141,10 +133,10 @@ void Quadruped::UpdateLimbs( float deltaSeconds )
 	UpdateLimbEndToRayImpactPos( m_bezierTimer_rightArm, m_raycast_RightArmDown, m_rightArm );
 	// Left Foot
 	fwdStep	= m_limbLength * 0.5f;
-	MoveIfNeeded( m_leftFoot, m_rightFoot, m_hip->m_firstJoint, m_hip->m_position_WS, skeletonMaxLength, maxDistStartPosToNewPos, fwdStep,  leftStep,  m_bezier_leftFoot, m_bezierTimer_leftFoot );
+	MoveIfNeeded( m_leftFoot, m_rightFoot, m_spine->m_finalJoint, m_spine->m_finalJoint->m_endPos, skeletonMaxLength, maxDistStartPosToNewPos, fwdStep, -leftStep,  m_bezier_leftFoot, m_bezierTimer_leftFoot );
 	UpdateLimbEndToRayImpactPos( m_bezierTimer_leftFoot, m_raycast_LeftFootDown, m_leftFoot );
 //	// Right Foot
-	MoveIfNeeded( m_rightFoot, m_leftFoot, m_hip->m_firstJoint, m_hip->m_position_WS, skeletonMaxLength, maxDistStartPosToNewPos, fwdStep, -leftStep, m_bezier_rightFoot, m_bezierTimer_rightFoot );
+	MoveIfNeeded( m_rightFoot, m_leftFoot, m_spine->m_finalJoint, m_spine->m_finalJoint->m_endPos, skeletonMaxLength, maxDistStartPosToNewPos, fwdStep,  leftStep, m_bezier_rightFoot, m_bezierTimer_rightFoot );
 	UpdateLimbEndToRayImpactPos( m_bezierTimer_rightFoot, m_raycast_RightFootDown, m_rightFoot );
 	
 	//----------------------------------------------------------------------------------------------------------------------
@@ -168,7 +160,7 @@ void Quadruped::UpdateLimbs( float deltaSeconds )
 	// Neck
 	//----------------------------------------------------------------------------------------------------------------------
 	// Keep neck attached to root
-	m_neck->m_position_WS					= m_root->m_jointPos_LS;
+	m_neck->m_position_WS				= m_root->m_jointPos_LS;
 	// Have neck reach out to head
 	Vec3 rootFwdDir						= m_root->m_eulerAngles_LS.GetForwardDir_XFwd_YLeft_ZUp();
 	m_neck->m_target.m_goalPos			= ( m_root->m_jointPos_LS + ( rootFwdDir * m_neck->m_firstJoint->m_distToChild ) ) + Vec3( 0.0f, 0.0f, 10.0f );
@@ -190,7 +182,6 @@ void Quadruped::UpdateLimbs( float deltaSeconds )
 	// Lerp head to goal
 	m_head->m_target.m_currentPos		= Interpolate( m_head->m_target.m_currentPos, m_head->m_target.m_goalPos, fractionTowardsEnd * 4.0f ); 
 
-
 	//----------------------------------------------------------------------------------------------------------------------
 	// Update Quadruped Height
 	//----------------------------------------------------------------------------------------------------------------------
@@ -210,7 +201,7 @@ void Quadruped::UpdateLimbs( float deltaSeconds )
 	// Hip height
 	goalHeight							= ( m_rightFoot->m_target.m_currentPos.z + m_leftFoot->m_target.m_currentPos.z ) * 0.5f;
 	goalHeight							+= m_defaultHeightZ;
-	m_hip->m_firstJoint->m_jointPos_LS.z	= goalHeight;
+	m_spine->m_firstJoint->m_jointPos_LS.z	= goalHeight;
 }
 
 
