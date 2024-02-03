@@ -1,2 +1,0 @@
-D:\Oak\Github\Masters-Thesis-Procedural-Animations-Using-Full-Body-Inverse-Kinematics\Temporary\Engine_x64_Debug\Engine_Debug_x64.lib
-D:\Oak\Github\Thesis\Temporary\Engine_x64_Debug\Engine_Debug_x64.lib
